@@ -1,9 +1,9 @@
 //! @file
 #pragma once
 
-#include <QWidget>
+#include "GraphicsView.hpp"
 #include <QPushButton>
-#include "graphics_view.hpp"
+#include <QWidget>
 
 class MainWindow : public QWidget {
 	Q_OBJECT

@@ -1,6 +1,7 @@
 //! @file
 
-#include "main_window.hpp"
+#include "MainWindow.hpp"
+
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 
@@ -38,12 +39,12 @@ MainWindow::_setupWidget() {
 		box->setAlignment(_moveButton, Qt::AlignCenter);
 		connect(_moveButton, &QPushButton::clicked, _view, &GraphicsView::onMove);
 		// wait for previous animation to finish (async)
-		connect(_moveButton,
-		        &QPushButton::clicked,
-		        [=]() { _moveButton->setDisabled(true); });
-		connect(_view,
-		        &GraphicsView::moveFinished,
-		        [=]() { _moveButton->setDisabled(false); });
+		connect(_moveButton, &QPushButton::clicked, [=]() {
+			_moveButton->setDisabled(true);
+		});
+		connect(_view, &GraphicsView::moveFinished, [=]() {
+			_moveButton->setDisabled(false);
+		});
 
 		QPushButton* _deleteButton = new QPushButton("Delete", this);
 		_deleteButton->setFixedSize(_deleteButton->sizeHint());

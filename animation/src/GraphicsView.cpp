@@ -1,30 +1,26 @@
 //! @file
 
-#include "graphics_view.hpp"
+#include "GraphicsView.hpp"
+
+#include <QDrag>
+#include <QMimeData>
+#include <QMouseEvent>
 #include <QParallelAnimationGroup>
 #include <QPropertyAnimation>
-#include "text_item.hpp"
 
 GraphicsView::GraphicsView(QWidget* parent)
   : QGraphicsView(parent)
   , _size(9, 9)
-  , _tileSize(32, 32)
+  , _minTileSize(32, 32)
   , _cells()
   , _items() {
-	/*
-	setStyleSheet(
-	        "QGraphicsView {"
-	        "background-color: transparent;"
-	        "}");
-	*/
-
 	_setupWidget();
 }
 
 QSize
 GraphicsView::sizeHint() const {
-	return QSize(_size.width() * _tileSize.width(),
-	             _size.height() * _tileSize.height());
+	return QSize(_size.width() * _minTileSize.width(),
+	             _size.height() * _minTileSize.height());
 }
 
 int
@@ -33,19 +29,17 @@ GraphicsView::heightForWidth(int w) const {
 }
 
 void
-GraphicsView::resizeEvent(QResizeEvent* event) {
-	fitInView(sceneRect(), Qt::KeepAspectRatio);
-	QGraphicsView::resizeEvent(event);
+GraphicsView::setDropPos(const QPointF& pos) {
+	_dropPos = pos;
 }
 
-PkMItem*
+Item*
 GraphicsView::onSpawn() {
-	PkMItem* pkm1 = new PkMItem();
-	pkm1->setPos(qrand() % _size.width(), qrand() % _size.height());
-	scene()->addItem(pkm1);
-	_items.insert(pkm1);
-
-	return pkm1;
+	Item* item = new Item();
+	item->setPos(qrand() % _size.width(), qrand() % _size.height());
+	scene()->addItem(item);
+	_items.insert(item);
+	return item;
 }
 
 void
@@ -53,24 +47,17 @@ GraphicsView::onMove() {
 	QParallelAnimationGroup* group = new QParallelAnimationGroup(this);
 	for (auto it : _items) {
 		QPointF currentPos = it->pos();
+		QPointF endPos = currentPos + QPointF((qrand() % 5) - 2, (qrand() % 5) - 2);
+		// Clamp to stay in grid if needed.
+		endPos.setX(qMax(qMin(endPos.x(), qreal(_size.width() - 1)), 0.));
+		endPos.setY(qMax(qMin(endPos.y(), qreal(_size.height() - 1)), 0.));
 
 		QPropertyAnimation* animation = new QPropertyAnimation(this);
 		animation->setTargetObject(it);
 		animation->setPropertyName("pos");
 		animation->setDuration(250); // ms
 		animation->setStartValue(currentPos);
-		// move between [-1, 0, 1]
-		qreal dx = (qrand() % 3) - 1;
-		qreal dy = (qrand() % 3) - 1;
-
-		if (currentPos.x() + dx < 0 || currentPos.x() + dx > _size.width() - 1) {
-			dx = 0;
-		}
-
-		if (currentPos.y() + dy < 0 || currentPos.y() + dy > _size.height() - 1) {
-			dy = 0;
-		}
-		animation->setEndValue(currentPos + QPointF(dx, dy));
+		animation->setEndValue(endPos);
 
 		group->addAnimation(animation);
 	}
@@ -86,7 +73,7 @@ void
 GraphicsView::onDelete() {
 	if (_items.empty()) return;
 
-	PkMItem* item = *_items.begin();
+	Item* item = *_items.begin();
 	_items.remove(item);
 
 	QPropertyAnimation* animation = new QPropertyAnimation(this);
@@ -97,9 +84,50 @@ GraphicsView::onDelete() {
 	animation->setEndValue(360);
 
 	// item automatically unregister from the scene on destroy.
-	connect(
-	  animation, &QPropertyAnimation::finished, item, &PixmapItem::deleteLater);
+	connect(animation, &QPropertyAnimation::finished, item, &Item::deleteLater);
 	animation->start(QAbstractAnimation::DeleteWhenStopped);
+}
+
+void
+GraphicsView::resizeEvent(QResizeEvent* event) {
+	fitInView(sceneRect(), Qt::KeepAspectRatio);
+	QGraphicsView::resizeEvent(event);
+}
+
+void
+GraphicsView::mousePressEvent(QMouseEvent* event) {
+	// Find item at mouse position
+	if (Item* dragItem = dynamic_cast<Item*>(itemAt(event->pos()))) {
+		dragItem->dragStart();
+
+		// Then create DragDrop event
+		{
+			QDrag* drag     = new QDrag(this);
+			QMimeData* data = new QMimeData;
+			data->setData("application/x-items", QByteArray());
+			drag->setMimeData(data);
+
+			// A tile size = 1x1 * fitInView Factor
+			// HotSpot = middle of the tile
+			QTransform tf = transform();
+			drag->setHotSpot(QPoint((tf.m11() + 0.5) / 2, (tf.m22() + 0.5) / 2));
+			drag->setPixmap(dragItem->pixmap().scaledToWidth(tf.m11()));
+			if (drag->exec(Qt::MoveAction) == Qt::MoveAction) {
+				// Verify if item is also present on drop site
+				if (Item* dropItem =
+				      dynamic_cast<Item*>(itemAt(mapFromScene(_dropPos)))) {
+					dropItem->setPos(dragItem->pos());
+				}
+				dragItem->setPos(_dropPos);
+			}
+		}
+		dragItem->dragStop();
+	}
+}
+
+void
+GraphicsView::mouseReleaseEvent(QMouseEvent* event) {
+	// qDebug() << "release view: " << pos();
 }
 
 void
@@ -111,7 +139,7 @@ GraphicsView::_createBoard() {
 	qsrand(8); // init rand seed
 	for (int j = 0; j < _size.width(); ++j) {
 		for (int i = 0; i < _size.height(); ++i) {
-			CellItem* cell = new CellItem();
+			Tile* cell = new Tile();
 			cell->setPos(i, j);
 			if (qrand() % 8 == 0) { // 1/8 of cells should not accept drop
 				cell->setAcceptDrops(false);
@@ -138,6 +166,7 @@ GraphicsView::_setupWidget() {
 
 	setScene(new QGraphicsScene(this));
 	scene()->setBackgroundBrush(Qt::green);
+	setCacheMode(QGraphicsView::CacheBackground);
 	setRenderHint(QPainter::Antialiasing);
 	setViewportUpdateMode(QGraphicsView::BoundingRectViewportUpdate);
 
@@ -146,12 +175,4 @@ GraphicsView::_setupWidget() {
 	onSpawn();
 	onSpawn();
 	onSpawn();
-
-	//	{
-	//		TextItem* text = new TextItem("1234xgf");
-	//		text->setPos(2, 2);
-	//		text->setZValue(2);
-	//		text->setFlag(QGraphicsItem::ItemIsMovable);
-	//		scene()->addItem(text);
-	//	}
 }

@@ -1,6 +1,6 @@
 #include <QApplication>
 
-#include "main_window.hpp"
+#include "MainWindow.hpp"
 
 int
 main(int argc, char* argv[]) {
