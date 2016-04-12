@@ -30,7 +30,7 @@ class GraphicsView : public QGraphicsView {
 	void _setupWidget();
 
 	QSize _size;
-  QSize _tileSize;
+	QSize _tileSize;
 	QSet<PkMItem*> _items;
 	QSet<CellItem*> _cells;
 };

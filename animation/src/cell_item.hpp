@@ -8,12 +8,14 @@ class CellItem : public PixmapItem {
 	CellItem(QGraphicsItem* parent = 0);
 	virtual ~CellItem() = default;
 
-	void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;
+	void paint(QPainter* painter,
+	           const QStyleOptionGraphicsItem* option,
+	           QWidget* widget = 0) override;
 
-protected:
-	void dragEnterEvent(QGraphicsSceneDragDropEvent *event) override;
-	void dragLeaveEvent(QGraphicsSceneDragDropEvent *event) override;
-	void dropEvent(QGraphicsSceneDragDropEvent *event) override;
+	protected:
+	void dragEnterEvent(QGraphicsSceneDragDropEvent* event) override;
+	void dragLeaveEvent(QGraphicsSceneDragDropEvent* event) override;
+	void dropEvent(QGraphicsSceneDragDropEvent* event) override;
 
 	bool _dragOver;
 };

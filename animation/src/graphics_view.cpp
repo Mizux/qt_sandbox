@@ -13,9 +13,9 @@ GraphicsView::GraphicsView(QWidget* parent)
   , _items() {
 	/*
 	setStyleSheet(
-	  "QGraphicsView {"
-	  "background-color: transparent;"
-	  "}");
+	        "QGraphicsView {"
+	        "background-color: transparent;"
+	        "}");
 	*/
 
 	_setupWidget();
@@ -108,10 +108,14 @@ GraphicsView::_createBoard() {
 	_cells.clear();
 	scene()->clear();
 
+	qsrand(8); // init rand seed
 	for (int j = 0; j < _size.width(); ++j) {
 		for (int i = 0; i < _size.height(); ++i) {
 			CellItem* cell = new CellItem();
 			cell->setPos(i, j);
+			if (qrand() % 8 == 0) { // 1/8 of cells should not accept drop
+				cell->setAcceptDrops(false);
+			}
 			scene()->addItem(cell);
 			_cells.insert(cell);
 		}
@@ -134,8 +138,8 @@ GraphicsView::_setupWidget() {
 
 	setScene(new QGraphicsScene(this));
 	scene()->setBackgroundBrush(Qt::green);
-  setRenderHint(QPainter::Antialiasing);
-  setViewportUpdateMode(QGraphicsView::BoundingRectViewportUpdate);
+	setRenderHint(QPainter::Antialiasing);
+	setViewportUpdateMode(QGraphicsView::BoundingRectViewportUpdate);
 
 	_createBoard();
 
@@ -143,11 +147,11 @@ GraphicsView::_setupWidget() {
 	onSpawn();
 	onSpawn();
 
-//	{
-//		TextItem* text = new TextItem("1234xgf");
-//		text->setPos(2, 2);
-//		text->setZValue(2);
-//		text->setFlag(QGraphicsItem::ItemIsMovable);
-//		scene()->addItem(text);
-//	}
+	//	{
+	//		TextItem* text = new TextItem("1234xgf");
+	//		text->setPos(2, 2);
+	//		text->setZValue(2);
+	//		text->setFlag(QGraphicsItem::ItemIsMovable);
+	//		scene()->addItem(text);
+	//	}
 }
