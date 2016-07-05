@@ -2,9 +2,6 @@
 
 #include "GraphicsView.hpp"
 
-#include <QDrag>
-#include <QMimeData>
-#include <QMouseEvent>
 #include <QParallelAnimationGroup>
 #include <QPropertyAnimation>
 
@@ -26,11 +23,6 @@ GraphicsView::sizeHint() const {
 int
 GraphicsView::heightForWidth(int w) const {
 	return w * _size.height() / _size.width();
-}
-
-void
-GraphicsView::setDropPos(const QPointF& pos) {
-	_dropPos = pos;
 }
 
 Item*
@@ -92,42 +84,6 @@ void
 GraphicsView::resizeEvent(QResizeEvent* event) {
 	fitInView(sceneRect(), Qt::KeepAspectRatio);
 	QGraphicsView::resizeEvent(event);
-}
-
-void
-GraphicsView::mousePressEvent(QMouseEvent* event) {
-	// Find item at mouse position
-	if (Item* dragItem = dynamic_cast<Item*>(itemAt(event->pos()))) {
-		dragItem->dragStart();
-
-		// Then create DragDrop event
-		{
-			QDrag* drag     = new QDrag(this);
-			QMimeData* data = new QMimeData;
-			data->setData("application/x-items", QByteArray());
-			drag->setMimeData(data);
-
-			// A tile size = 1x1 * fitInView Factor
-			// HotSpot = middle of the tile
-			QTransform tf = transform();
-			drag->setHotSpot(QPoint((tf.m11() + 0.5) / 2, (tf.m22() + 0.5) / 2));
-			drag->setPixmap(dragItem->pixmap().scaledToWidth(tf.m11()));
-			if (drag->exec(Qt::MoveAction) == Qt::MoveAction) {
-				// Verify if item is also present on drop site
-				if (Item* dropItem =
-				      dynamic_cast<Item*>(itemAt(mapFromScene(_dropPos)))) {
-					dropItem->setPos(dragItem->pos());
-				}
-				dragItem->setPos(_dropPos);
-			}
-		}
-		dragItem->dragStop();
-	}
-}
-
-void
-GraphicsView::mouseReleaseEvent(QMouseEvent* event) {
-	// qDebug() << "release view: " << pos();
 }
 
 void

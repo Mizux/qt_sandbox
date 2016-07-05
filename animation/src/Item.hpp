@@ -12,10 +12,17 @@ class Item : public QGraphicsObject {
 	void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
 
 	QPixmap pixmap();
+	void setDropPos(const QPointF& pos);
+
+	protected:
+  void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+  void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
+  void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
 
 	void dragStart();
 	void dragStop();
 
-	protected:
+  private:
 	bool _dragStart;
+	QPointF _dropPos;
 };

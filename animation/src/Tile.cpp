@@ -2,11 +2,15 @@
 
 #include "Tile.hpp"
 
-#include "GraphicsView.hpp"
+#include "Item.hpp"
+#include <QWidget>
+
 #include <QGraphicsSceneEvent>
 #include <QMimeData>
 #include <QPainter>
 #include <QPixmapCache>
+
+#include <QDebug>
 
 Tile::Tile(QGraphicsItem* parent)
   : QGraphicsObject(parent)
@@ -93,7 +97,8 @@ void
 Tile::dropEvent(QGraphicsSceneDragDropEvent* event) {
 	if (event->mimeData()->hasFormat("application/x-items")) {
 		_dragOver = false;
-		dynamic_cast<GraphicsView*>(event->source())->setDropPos(pos());
+    qDebug() << "eventSource: " << event->source();
+		dynamic_cast<Item*>(event->source())->setDropPos(pos());
 		event->acceptProposedAction();
 		event->accept();
 		update();
