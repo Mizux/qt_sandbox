@@ -16,8 +16,6 @@ class GraphicsView : public QGraphicsView {
 	QSize sizeHint() const override;
 	int heightForWidth(int w) const override;
 
-	void setDropPos(const QPointF& pos);
-
 	signals:
 	void moveFinished();
 
@@ -28,10 +26,6 @@ class GraphicsView : public QGraphicsView {
 
 	protected:
 	virtual void resizeEvent(QResizeEvent* event) override;
-	//! @brief Update when clic on item.
-	void mousePressEvent(QMouseEvent* event) override;
-	//! @brief Update when clic is released on tile.
-	void mouseReleaseEvent(QMouseEvent* event) override;
 
 	void _createBoard();
 	void _setupWidget();
@@ -40,6 +34,4 @@ class GraphicsView : public QGraphicsView {
 	QSize _minTileSize;
 	QSet<Item*> _items;
 	QSet<Tile*> _cells;
-
-	QPointF _dropPos;
 };
